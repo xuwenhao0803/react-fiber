@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+    <script>
+        let works = [() => {
+            console.log(123);
+        }, () => {
+            console.log(234);
+        }, () => {
+            console.log(567);
+        }]
+
+        window.requestIdleCallback(workLoop, { timeout: 500 });
+
+
+        function workLoop(deadline) {
+            console.log(`剩余时间${parseInt(deadline.timeRemaining())}`);
+
+            if ((deadline.timeRemaining() > 0 || deadline.didTimeout) && works.length > 0) {
+                performofunitwork();
+            }
+
+            if (works.length > 0) {
+                requestIdleCallback(workLoop, { timeout: 500 })
+            }
+
+
+        }
+        function performofunitwork() {
+            console.log('执行');
+            works.shift()()
+
+        }
+
+
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #oDIV {
+            width: 1px;
+            height: 10px;
+            background: green;
+        }
+    </style>
+</head>
+<div id="oDIV"></div>
+
+<body>
+
+    <script>
+
+        let width = 1;
+
+        function callback() {
+            console.log(12);
+            width = width + 1
+            oDIV.style.width = `${width}px`
+            if (width < 100) {
+                window.requestAnimationFrame(callback)
+            }
+        }
+
+        window.requestAnimationFrame(callback)
+
+
+    </script>
+
+
+</body>
+
+</html>
