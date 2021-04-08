@@ -1,11 +1,25 @@
-import { ELEMENT_TEXT, TAG_ROOT, TAG_TEXT, TAG_HOST, PLACEMENT } from '../react/constants';
+import { ELEMENT_TEXT, TAG_ROOT, TAG_TEXT, TAG_HOST, PLACEMENT, DELETION, UPDATE } from '../react/constants';
 import { updateDOM } from './utils';
 let nextUnitOfWork = null;//下一个工作单元
 let workInProgressRoot = null;//RootFiber应用的根
+let currentRoot = null;//渲染成功之后的树
+let deletions = [];//删除的节点我们不放在effect list中，所以要单独执行
 //render阶段有两个任务1.根据虚拟dom生成fiber树，收集effectlist
 export function scheduleRoot(rootFiber) {
-    workInProgressRoot = rootFiber;
-    nextUnitOfWork = rootFiber;
+    debugger
+    if (currentRoot && currentRoot.alternate) {
+        workInProgressRoot = currentRoot.alternate;//第一次渲染出来的fiber tree
+        workInProgressRoot.props = rootFiber.props;
+        workInProgressRoot.alternate = currentRoot;
+    } else if (currentRoot) {
+        rootFiber.alternate = currentRoot;
+        workInProgressRoot = rootFiber;
+    } else {
+        workInProgressRoot = rootFiber;
+    }
+    workInProgressRoot.firstEffect = workInProgressRoot.lastEffect = null;
+    nextUnitOfWork = workInProgressRoot;
+
     requestIdleCallback(workLoop, { timeout: 500 });
 
 }
@@ -32,14 +46,16 @@ function workLoop(deadline) {
 
 
 function commitRoot() {
+    deletions.forEach(commitWork);
     let currentFiber = workInProgressRoot.firstEffect;
-    console.log(currentFiber);
     while (currentFiber) {
 
         commitWork(currentFiber);
         currentFiber = currentFiber.nextEffect;
 
     }
+    deletions.length = 0;
+    currentRoot = workInProgressRoot;
     workInProgressRoot = null;
 }
 
@@ -49,6 +65,18 @@ function commitWork(currentFiber) {
     let returnDOM = returnFiber.stateNode;
     if (currentFiber.effectTag === PLACEMENT) {
         returnDOM.appendChild(currentFiber.stateNode)
+    } else if (currentFiber.effectTag === DELETION) {
+        returnDOM.removeChild(currentFiber.stateNode);
+    } else if (currentFiber.effectTag === UPDATE) {
+        if (currentFiber.tag === TAG_TEXT) {
+            if (currentFiber.alternate.props.text !== currentFiber.props.text) {
+                currentFiber.stateNode.textContent = currentFiber.props.text;
+            }
+        } else {
+
+            updateDOM(currentFiber.stateNode, currentFiber.alternate.props, currentFiber.props)
+
+        }
     }
     currentFiber.effectTag = null
 
@@ -66,23 +94,51 @@ function updateHostRoot(currentFiber) {
 function reconcileChildren(currentFiber, newChildren) {
 
     let newChildIndex = 0;
+    let oldFiber = currentFiber.alternate && currentFiber.alternate.child;
     let prevSibling;//上一个子元素的索引
+    let newFiber;
     while (newChildIndex < newChildren.length) {
         let newChild = newChildren[newChildIndex];//拿出虚拟dom节点
+        let sameType = oldFiber && newChild && newChild.type === oldFiber.type;
         let tag;
-        if (typeof newChild.type === 'string') {
+        if (newChild && typeof newChild.type === 'string') {
             tag = TAG_HOST;
-        } else if (newChild.type === ELEMENT_TEXT) {
+        } else if (newChild && newChild.type === ELEMENT_TEXT) {
             tag = TAG_TEXT;
         }
-        let newFiber = {
-            tag,
-            type: newChild.type,
-            props: newChild.props,
-            stateNode: null,
-            return: currentFiber,
-            effectTag: PLACEMENT,//副作用标识
-            nextEffect: null
+
+        if (sameType) {//老fiber和新的虚拟dom一样，可以复用老的DOM节点，更新即可
+            newFiber = {
+                tag: oldFiber.tag,
+                type: oldFiber.type,
+                props: newChild.props,
+                stateNode: oldFiber.stateNode,
+                return: currentFiber,
+                alternate: oldFiber,
+                effectTag: UPDATE,//副作用标识
+                nextEffect: null
+            }
+
+        } else {
+
+            if (newChild) {
+                newFiber = {
+                    tag,
+                    type: newChild.type,
+                    props: newChild.props,
+                    stateNode: null,
+                    return: currentFiber,
+                    effectTag: PLACEMENT,//副作用标识
+                    nextEffect: null
+                }
+            }
+            if (oldFiber) {
+                oldFiber.effectTag = DELETION;
+                deletions.push(oldFiber);
+            }
+        }
+        if (oldFiber) {
+            oldFiber = oldFiber.sibling;
         }
         if (newFiber) {
             if (newChildIndex === 0) {
@@ -153,7 +209,7 @@ function completeUnitOfWork(currentFiber) {
             if (returnFiber.lastEffect) {
                 returnFiber.lastEffect.nextEffect = currentFiber.firstEffect;
             }
-            returnFiber.lastEffect=currentFiber.lastEffect
+            returnFiber.lastEffect = currentFiber.lastEffect
             ///////////////////
             //把自己挂到父亲身上
             if (returnFiber.lastEffect) {
@@ -167,7 +223,6 @@ function completeUnitOfWork(currentFiber) {
 }
 
 function performUnitOfWork(currentFiber) {
-    debugger
     beginWork(currentFiber)
     if (currentFiber.child) {
         return currentFiber.child

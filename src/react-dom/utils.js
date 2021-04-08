@@ -1,11 +1,19 @@
-export function updateDOM(stateNode, oldProps, newProps) {
+export function updateDOM(stateNode, oldProps = {}, newProps) {
 
     for (let key in oldProps) {
-
+        if (key !== 'children') {
+            if (newProps.hasOwnProperty(key)) {
+                setprop(stateNode, key, newProps[key])
+            } else {
+                stateNode.removeAttribute(key);
+            }
+        }
     }
     for (let key in newProps) {
         if (key !== 'children') {
-            setprop(stateNode, key, newProps[key])
+            if (!oldProps.hasOwnProperty(key)) {
+                setprop(stateNode, key, newProps[key])
+            }
         }
     }
 }
@@ -22,7 +30,12 @@ function setprop(dom, key, value) {
         }
 
     } else {
-        dom.setAttribute(key, value)
+        console.log(value);
+        if (key !== 'text') {
+            dom.setAttribute(key, value)
+        }
+
+
     }
 
 
