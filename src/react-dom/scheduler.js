@@ -6,7 +6,6 @@ let currentRoot = null;//渲染成功之后的树
 let deletions = [];//删除的节点我们不放在effect list中，所以要单独执行
 //render阶段有两个任务1.根据虚拟dom生成fiber树，收集effectlist
 export function scheduleRoot(rootFiber) {
-    debugger
     if (currentRoot && currentRoot.alternate) {
         workInProgressRoot = currentRoot.alternate;//第一次渲染出来的fiber tree
         workInProgressRoot.props = rootFiber.props;
@@ -108,16 +107,25 @@ function reconcileChildren(currentFiber, newChildren) {
         }
 
         if (sameType) {//老fiber和新的虚拟dom一样，可以复用老的DOM节点，更新即可
-            newFiber = {
-                tag: oldFiber.tag,
-                type: oldFiber.type,
-                props: newChild.props,
-                stateNode: oldFiber.stateNode,
-                return: currentFiber,
-                alternate: oldFiber,
-                effectTag: UPDATE,//副作用标识
-                nextEffect: null
+            if (oldFiber.alternate) {
+                newFiber = oldFiber.alternate;
+                newFiber.props = newChild.props;
+                newFiber.alternate = oldFiber;
+                newFiber.effectTag = UPDATE;
+                newFiber.nextEffect = null;
+            } else {
+                newFiber = {
+                    tag: oldFiber.tag,
+                    type: oldFiber.type,
+                    props: newChild.props,
+                    stateNode: oldFiber.stateNode,
+                    return: currentFiber,
+                    alternate: oldFiber,
+                    effectTag: UPDATE,//副作用标识
+                    nextEffect: null
+                }
             }
+
 
         } else {
 
