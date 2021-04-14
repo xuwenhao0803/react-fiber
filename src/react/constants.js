@@ -5,3 +5,6 @@ export const TAG_TEXT = Symbol.for('TAG_TEXT');
 export const PLACEMENT = Symbol.for('PLACEMENT');
 export const UPDATE = Symbol.for('UPDATE');
 export const DELETION = Symbol.for('DELETION');
+export const TAG_CLASS=Symbol.for('TAG_CLASS');
+export const TAG_FUNCTION_COMPONENT=Symbol.for('TAG_FUNCTION_COMPONENT');
+

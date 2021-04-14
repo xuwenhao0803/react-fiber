@@ -1,5 +1,5 @@
 export function updateDOM(stateNode, oldProps = {}, newProps) {
-
+    if (stateNode&&!stateNode.setAttribute) return
     for (let key in oldProps) {
         if (key !== 'children') {
             if (newProps.hasOwnProperty(key)) {
