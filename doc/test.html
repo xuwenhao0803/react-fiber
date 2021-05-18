@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let isMount = false;
+        let workInprogressHook = null;
+        const fiber = {
+            memoizedState: null,
+            stateNode: App
+        }
+
+        function dispatchAction(queue, action) {
+            const update = {
+                action, next: null
+            }
+            if (queue.pending === null) {
+                update.next = update;
+            } else {
+                update.next = queue.pending.next;
+                queue.pending.next = update;
+            }
+            queue.pending = update;
+            run()
+        }
+
+        function run() {
+            workInprogressHook = fiber.memoizedState;
+            const app = fiber.stateNode();
+            isMount = true;
+            return app
+        }
+        function useState(initialState) {
+            let hook;
+            if (!isMount) {
+                hook = {
+                    queue: {
+                        pending: null
+                    },
+                    memoizedState: initialState,
+                    next: null
+                }
+                if (!fiber.memoizedState) {
+                    fiber.memoizedState = hook;
+                } else {
+                    workInprogressHook.next = hook;
+                }
+                workInprogressHook = hook;
+            } else {
+                hook = workInprogressHook;
+                workInprogressHook = workInprogressHook.next;
+            }
+            let baseState = hook.memoizedState;
+            if (hook.queue.pending) {
+                let firstUpdate = hook.queue.pending.next;
+
+                do {
+                    const action = firstUpdate.action;
+                    baseState = action(baseState);
+                    firstUpdate = firstUpdate.next
+                } while (firstUpdate !== hook.queue.pending.next) {
+                    hook.queue.pending = null
+                }
+
+            }
+            hook.memoizedState = baseState;
+            return [baseState, dispatchAction.bind(null, hook.queue)]
+        }
+
+
+
+        function App() {
+            const [num, updatNum] = useState(0);
+            const [num1, updatNum1] = useState(0);
+            console.log('isMount', isMount);
+            console.log('num', num);
+            console.log('num1', num1);
+            return {
+                onClick() {
+                    updatNum(num => num + 1)
+                    updatNum(num => num + 1)
+                    updatNum(num => num + 1)
+                },
+                onClick1() {
+                    updatNum1(num1 => num1 + 1)
+                }
+            }
+        }
+        window.app = run();
+    </script>
+</body>
+
+</html>
