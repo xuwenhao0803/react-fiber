@@ -3,25 +3,6 @@ import ReactDOM from './react-dom';
 
 
 
-class Count extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      number: 0
-    }
-  }
-  handleClick = () => {
-    this.setState({
-      number: this.state.number + 1
-    })
-  }
-  render() {
-    return React.createElement("div", {}, React.createElement("div", {}, this.state.number),
-      React.createElement("button", {
-        onClick: this.handleClick
-      }, "+"))
-  }
-}
 function reducer(state, action) {
   switch (action.type) {
     case 'ADD':
@@ -34,16 +15,16 @@ function reducer(state, action) {
 function FunctionCounter() {
   const [countState, dispatch] = React.useReducer(reducer, { count: 0 })
 
-  return React.createElement("div", {}, React.createElement("span", {}, countState.count),
-    React.createElement("button", {
-      onClick: () => {
-        dispatch({
-          type: 'ADD'
-        })
-      }
-    }, "+1"))
-
+  return   React.createElement("div", {}, React.createElement("span", {}, countState.count),
+  React.createElement("button", {
+    onClick: () => {
+      dispatch({
+        type: 'ADD'
+      })
+    }
+  }, "+1"))
 }
 
-ReactDOM.render(<FunctionCounter />, document.getElementById('root'));
+const element=React.createElement(FunctionCounter, {});
+ReactDOM.render(element, document.getElementById('root'));
 

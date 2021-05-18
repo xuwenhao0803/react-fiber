@@ -6,6 +6,7 @@ let workInProgressRoot = null;//RootFiber应用的根
 let currentRoot = null;//渲染成功之后的树
 let deletions = [];//删除的节点我们不放在effect list中，所以要单独执行
 let workInProgressFiber = null;//正在工作中的fiber
+export let workInProgressHook=null;//工作中的hook
 let hookIndex = 0;//hook索引
 //render阶段有两个任务1.根据虚拟dom生成fiber树，收集effectlist
 export function scheduleRoot(rootFiber) {
@@ -81,7 +82,6 @@ function commitWork(currentFiber) {
     let returnDOM = returnFiber.stateNode;
     if (currentFiber.effectTag === PLACEMENT) {
         let nextFiber = currentFiber;
-
         //如果挂载的节点不是DOM节点，比如说是类组件的Fiber,一直找第一个儿子，直到找到第一个真实DOM为止
         while (nextFiber.tag !== TAG_HOST && nextFiber.tag !== TAG_TEXT) {
             nextFiber = currentFiber.child;
